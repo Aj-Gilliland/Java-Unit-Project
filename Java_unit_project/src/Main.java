@@ -77,34 +77,65 @@ public class Main {
         //Decodes the encryptedData into a base64 string
     }
     //stenography
+    public static String decodeImage(String imagePath) {
+        try {
+            //get image and put on buffers
+            BufferedImage img = ImageIO.read(new File(imagePath));
+            StringBuilder binaryMessage = new StringBuilder();
+            StringBuilder decodedMessage = new StringBuilder();
+            //read the LSBs from the image to reconstruct the binary message
+            for (int y = 0; y < img.getHeight(); y++) {
+                for (int x = 0; x < img.getWidth(); x++) {
+                    int color = img.getRGB(x, y);
+                    int blue = color & 0xff;
+                    int bit = blue & 1; // get LSB of the blue component
+                    binaryMessage.append(bit);
+                    //every 8 bits, convert binary to character
+                    if (binaryMessage.length() == 8) {
+                        int charCode = Integer.parseInt(binaryMessage.toString(), 2);
+                        //stop if a null character is found
+                        if (charCode == 0) {
+                            return decodedMessage.toString();
+                        }
+                        decodedMessage.append((char) charCode);
+                        binaryMessage.setLength(0); // Reset for next character
+                    }
+                }
+            }
+            return decodedMessage.toString();
+        } catch (IOException e) {
+            System.err.println("Error: " + e.getMessage());
+            return null;
+        }
+    }
     public static void encodeAndSaveImage(String originalImagePath, String message, String outputImagePath) {
         try {
-            // Load the original image
+            //get image and put on buffers
             BufferedImage img = ImageIO.read(new File(originalImagePath));
             int messageLength = message.length();
             int[] messageBits = new int[messageLength * 8];
-            // Convert message to binary
+            //convert message to binary
             int messageBitIndex = 0;
             for (char c : message.toCharArray()) {
                 for (int i = 7; i >= 0; --i, ++messageBitIndex) {
                     messageBits[messageBitIndex] = (c >> i) & 1;
                 }
             }
-            // Encode message into the image
+            //encode message into the image
             int imgIndex = 0;
             for (int y = 0; y < img.getHeight(); y++) {
                 for (int x = 0; x < img.getWidth(); x++) {
                     if (imgIndex < messageBits.length) {
                         int color = img.getRGB(x, y);
                         int blue = color & 0xff;
-                        // Modify the LSB of the blue component
+                        //modify the LSB of the blue component
                         blue = (blue & 0xfe) | messageBits[imgIndex++];
                         int newColor = (color & 0xffff00ff) | (blue << 0);
                         img.setRGB(x, y, newColor);
                     }
                 }
             }
-            // Save the modified image
+            //save the modified image
             ImageIO.write(img, "png", new File(outputImagePath));
             System.out.println("Encoding Complete");
         } catch (IOException e) {
@@ -114,10 +145,10 @@ public class Main {
     //sql and storage
     public static Integer testConnect() {
         try {
-            // Explicitly load the PostgreSQL JDBC driver class
+            //explicitly load the PostgreSQL JDBC driver class
             Class.forName("org.postgresql.Driver");
             Connection connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
-            // It's a good practice to close the connection
+            //its a good practice to close the connection
             connection.close();
             System.out.println("Connection successful");
         } catch (SQLException ex) {
@@ -127,17 +158,14 @@ public class Main {
         }
         return 8;
     }
-
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         System.out.println("Hello World");
         testConnect();
         Encrypt("Kaleigh");
         encodeAndSaveImage("C:/Users/fastc/OneDrive/Desktop/test_folder/mathew.png", "This is a secret message", "C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png");
+        System.out.println(decodeImage("C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png"));;
         System.out.println("The program has finished!!!");
     }
-
-
-
 
 }
 
