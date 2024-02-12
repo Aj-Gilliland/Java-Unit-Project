@@ -1,21 +1,4 @@
-//stenography imports
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-//encryption imports
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-//sql imports
-import java.sql.*;
-import java.util.Base64;
+
 
 
 public class Main {
@@ -75,6 +58,20 @@ public class Main {
         String originalString = new String(original);
         System.out.println("Decryption Succesful your password is " + originalString);
         //Decodes the encryptedData into a base64 string
+    }
+    //secret file for local storage
+    public static void makeHiddenFile (){
+        try {
+            String desktopPath = System.getProperty("user.home") + File.separator + "OneDrive" + File.separator + "Desktop" + File.separator;
+            String invisibleDirName = "\u00A0"; //inviseble file name unicode char
+            String fullPath = desktopPath + invisibleDirName;
+            File dir = new File(fullPath);//\VvV/\VvV/\VvV/_helps make invise file_\VvV/\VvV/\VvV/
+            boolean created = dir.mkdirs(); //use mkdirs() to create the directory (and any necessary parent directories so DONT CHANGE THE FILE PATH)
+            Path path = Paths.get(fullPath);//makes Path obj to use in setAtt...
+            Files.setAttribute(path, "dos:hidden", true);//hides invisible file
+        } catch (IOException e){
+            System.out.println(e);
+        }
     }
     //stenography
     public static String decodeImage(String imagePath) {
@@ -158,12 +155,16 @@ public class Main {
         }
         return 8;
     }
+
+
+
+
+
+
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         System.out.println("Hello World");
         testConnect();
-        Encrypt("Kaleigh");
-        encodeAndSaveImage("C:/Users/fastc/OneDrive/Desktop/test_folder/mathew.png", "This is a secret message", "C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png");
-        System.out.println(decodeImage("C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png"));;
+        makeHiddenFile();
         System.out.println("The program has finished!!!");
     }
 
