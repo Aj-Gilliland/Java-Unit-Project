@@ -1,4 +1,29 @@
-
+//file imports
+import java.io.IOError;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.DosFileAttributes;
+import java.io.File;
+//stenography imports
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;//this is the 'os' import
+import java.io.IOException;
+//encryption imports
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+//sql imports
+import java.sql.*;
+import java.util.Base64;
+import static java.nio.file.Files.exists;
 
 
 public class Main {
