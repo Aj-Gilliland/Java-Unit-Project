@@ -35,8 +35,8 @@ public class Main {
         new SecureRandom().nextBytes(salt);
         int iterationCount = 65536;
         int keyLength = 256;
-    /* random generated 16 byte array for salt, num of iterations for key derivation function,
-    defines length of derived key in bits, 256 in this case for AES 256 encryption */
+        /* random generated 16 byte array for salt, num of iterations for key derivation function,
+        defines length of derived key in bits, 256 in this case for AES 256 encryption */
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHMACSHA256");
         /* Creates secret key factory instance for key derivation function PBKDF2 using HmacSHA256 as the underlying has function. */
         PBEKeySpec spec = new PBEKeySpec(newpassword, salt, iterationCount, keyLength);
@@ -52,9 +52,9 @@ public class Main {
         IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
         //creates IVParameterSpec object from ivBytes which will initialize the cipher
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-    /*Initializes a cipher instance for AES encryption in CBC mode(Cipher Block Chaining) with PKCS5 Padding
-    Note Cipher Block Chaining users the IV for the first block and each subsequent block is stored with the previous ciphertext block/*
-     */
+        /*Initializes a cipher instance for AES encryption in CBC mode(Cipher Block Chaining) with PKCS5 Padding
+        Note Cipher Block Chaining users the IV for the first block and each subsequent block is stored with the previous ciphertext block/*
+         */
         cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivSpec);
         //initializes cipher in encryption mode with derived AES key and IV
         byte[] encrypted = cipher.doFinal(password.getBytes());
@@ -165,20 +165,38 @@ public class Main {
         }
     }
     //sql and storage
-    public static Integer testConnect() {
+    public static void queryDb() {
+        Connection connection = null;
+        Statement stmt = null;
+        ResultSet rs = null;
         try {
             //explicitly load the PostgreSQL JDBC driver class
             Class.forName("org.postgresql.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
-            //its a good practice to close the connection
-            connection.close();
-            System.out.println("Connection successful");
-        } catch (SQLException ex) {
+            //establish a connection to the database
+            connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
+            //create a statement object to execute the query
+            stmt = connection.createStatement();
+            //execute a SQL query and retrieve the result set
+            String sql = "SELECT username FROM person"; // Replace 'column_name' and 'your_table_name' with actual names
+            rs = stmt.executeQuery(sql);
+            //process the result set
+            while (rs.next()) {//built in method that evalutes false once you see all the data with in
+                String retrievedData = rs.getString("username"); //use the appropriate getter method for the data type
+                System.out.println(retrievedData);
+            }
+        } catch (SQLException ex) {//phat validation
             System.out.println("SQLException: " + ex.getMessage());
         } catch (ClassNotFoundException e) {
             System.out.println("ClassNotFoundException: " + e.getMessage());
+        } finally {//closes resources in the end no matter what
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (connection != null) connection.close();
+            } catch (SQLException ex) {
+                System.out.println("SQLException on closing: " + ex.getMessage());
+            }
         }
-        return 8;
     }
 
 
@@ -187,8 +205,8 @@ public class Main {
 
 
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
-        System.out.println("Hello World");
-        testConnect();
+        System.out.println("Thank you for choosing Stealth Key");
+        queryDb();
         makeHiddenFile();
         System.out.println("The program has finished!!!");
     }
