@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.javafx_project.HelloController">
+  <Button fx:id="clickMeButton" text="Click me" onAction="#handleClick"/>
+</VBox>
