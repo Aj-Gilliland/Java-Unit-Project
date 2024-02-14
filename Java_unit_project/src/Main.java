@@ -1,30 +1,21 @@
-//file imports
-import java.io.IOError;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.DosFileAttributes;
-import java.io.File;
-//stenography imports
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;//this is the 'os' import
-import java.io.IOException;
-//encryption imports
+
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
-//sql imports
 import java.sql.*;
 import java.util.Base64;
-import static java.nio.file.Files.exists;
-
 
 public class Main {
     //encryption
@@ -99,28 +90,76 @@ public class Main {
         }
     }
     //stenography
-    public static String decodeImage(String imagePath) {
+    public static byte[] encodeImage(String originalImagePath, String message) {
         try {
-            //get image and put on buffers
-            BufferedImage img = ImageIO.read(new File(imagePath));
+            BufferedImage img = ImageIO.read(new File(originalImagePath));
+            int messageLength = message.length();
+            int imageWidth = img.getWidth();
+            int imageHeight = img.getHeight();
+            int[] messageBits = new int[messageLength * 8 + 8]; //additional 8 bits for the terminating character
+            //convert message to binary
+            int messageBitIndex = 0;
+            for (char c : message.toCharArray()) {
+                for (int i = 7; i >= 0; --i, ++messageBitIndex) {
+                    messageBits[messageBitIndex] = (c >> i) & 1;
+                }
+            }
+            //add a terminating character to the message (null character, ASCII 0)
+            for (int i = 7; i >= 0; --i, ++messageBitIndex) {
+                messageBits[messageBitIndex] = 0; //appending 0 to signify the end of the message
+            }
+            if (messageBitIndex > imageWidth * imageHeight) {
+                System.err.println("Error: Image is too small to encode the message.");
+                return null;
+            }
+            //encode message into the image
+            int bitIndex = 0;
+            for (int y = 0; y < imageHeight && bitIndex < messageBitIndex; y++) {
+                for (int x = 0; x < imageWidth && bitIndex < messageBitIndex; x++) {
+                    int color = img.getRGB(x, y);
+                    int blue = color & 0xff;
+                    int newBlue = (blue & 0xfe) | messageBits[bitIndex]; // Modify LSB of blue channel
+                    int newColor = (color & 0xffff00ff) | (newBlue << 0);
+                    img.setRGB(x, y, newColor);
+                    bitIndex++;
+                }
+            }
+            //convert the BufferedImage to a byte array
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            if (ImageIO.write(img, "png", baos)) {
+                baos.flush();
+                return baos.toByteArray();
+            } else {
+                System.err.println("Could not write image using ImageIO");
+                return null;
+            }
+        } catch (IOException e) {
+            System.err.println("Error: " + e.getMessage());
+            return null;
+        }
+    }
+    public static String decodeImage(byte[] imageData) {
+        try {
+            //convert byte array into a BufferedImage
+            BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageData));
             StringBuilder binaryMessage = new StringBuilder();
             StringBuilder decodedMessage = new StringBuilder();
-            //read the LSBs from the image to reconstruct the binary message
+            //decode the LSBs from the image to reconstruct the binary message
             for (int y = 0; y < img.getHeight(); y++) {
                 for (int x = 0; x < img.getWidth(); x++) {
                     int color = img.getRGB(x, y);
                     int blue = color & 0xff;
-                    int bit = blue & 1; // get LSB of the blue component
+                    int bit = blue & 1; //extract LSB of the blue component
                     binaryMessage.append(bit);
-                    //every 8 bits, convert binary to character
+                    //convert every 8 bits into a character
                     if (binaryMessage.length() == 8) {
                         int charCode = Integer.parseInt(binaryMessage.toString(), 2);
-                        //stop if a null character is found
+                        //stop decoding if a null character (end of message marker) is found
                         if (charCode == 0) {
                             return decodedMessage.toString();
                         }
                         decodedMessage.append((char) charCode);
-                        binaryMessage.setLength(0); // Reset for next character
+                        binaryMessage.setLength(0); //reset for the next character
                     }
                 }
             }
@@ -130,74 +169,80 @@ public class Main {
             return null;
         }
     }
-    public static void encodeAndSaveImage(String originalImagePath, String message, String outputImagePath) {
-        try {
-            //get image and put on buffers
-            BufferedImage img = ImageIO.read(new File(originalImagePath));
-            int messageLength = message.length();
-            int[] messageBits = new int[messageLength * 8];
-            //convert message to binary
-            int messageBitIndex = 0;
-            for (char c : message.toCharArray()) {
-                for (int i = 7; i >= 0; --i, ++messageBitIndex) {
-                    messageBits[messageBitIndex] = (c >> i) & 1;
-                }
-            }
-            //encode message into the image
-            int imgIndex = 0;
-            for (int y = 0; y < img.getHeight(); y++) {
-                for (int x = 0; x < img.getWidth(); x++) {
-                    if (imgIndex < messageBits.length) {
-                        int color = img.getRGB(x, y);
-                        int blue = color & 0xff;
-                        //modify the LSB of the blue component
-                        blue = (blue & 0xfe) | messageBits[imgIndex++];
-                        int newColor = (color & 0xffff00ff) | (blue << 0);
-                        img.setRGB(x, y, newColor);
-                    }
-                }
-            }
-            //save the modified image
-            ImageIO.write(img, "png", new File(outputImagePath));
-            System.out.println("Encoding Complete");
-        } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
+    //vvvvv_these image getter helper functions are only for the master password_vvvvv
+    public static void storeImageAtId(byte[] imageBytes, int id) {
+        String url = "jdbc:postgresql://localhost:5432/thesafe";
+        String user = "aj";
+        String password = "aj1274414";
+        String sql = "UPDATE person SET master_image = ? WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setBytes(1, imageBytes);
+            pstmt.setInt(2, id);
+            pstmt.executeUpdate();
+            System.out.println("Image stored successfully for person: " + id);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
     }
+    public static byte[] retrieveImageById(int id) {
+        String sql = "SELECT master_image FROM person WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getBytes("master_image");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
     //sql and storage
-    public static void queryDb() {
-        Connection connection = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            //explicitly load the PostgreSQL JDBC driver class
-            Class.forName("org.postgresql.Driver");
-            //establish a connection to the database
-            connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
-            //create a statement object to execute the query
-            stmt = connection.createStatement();
-            //execute a SQL query and retrieve the result set
-            String sql = "SELECT username FROM person"; // Replace 'column_name' and 'your_table_name' with actual names
-            rs = stmt.executeQuery(sql);
-            //process the result set
-            while (rs.next()) {//built in method that evalutes false once you see all the data with in
-                String retrievedData = rs.getString("username"); //use the appropriate getter method for the data type
-                System.out.println(retrievedData);
-            }
-        } catch (SQLException ex) {//phat validation
-            System.out.println("SQLException: " + ex.getMessage());
-        } catch (ClassNotFoundException e) {
-            System.out.println("ClassNotFoundException: " + e.getMessage());
-        } finally {//closes resources in the end no matter what
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                if (connection != null) connection.close();
-            } catch (SQLException ex) {
-                System.out.println("SQLException on closing: " + ex.getMessage());
-            }
-        }
-    }
+//    public static String[] queryPasswordByUsername(usernameInput) {
+//        Connection connection = null;
+//        Statement stmt = null;
+//        ResultSet rs = null;
+//        try {
+//            //explicitly load the PostgreSQL JDBC driver class
+//            Class.forName("org.postgresql.Driver");
+//            //establish a connection to the database
+//            connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
+//            //create a statement object to execute the query
+//            stmt = connection.createStatement();
+//            //execute a SQL query and retrieve the result set
+//            String sql = "SELECT username FROM person WHERE username = "+usernameInput;
+//            rs = stmt.executeQuery(sql);
+//            //process the result set
+//            while (rs.next()) {//built in method that evalutes false once you see all the data with in
+//                String username = rs.getString("username");
+//                String ivspec = rs.getString("master_ivspec");
+//                String key = rs.getString("master_key");
+//                String image = rs.getString("master_image");
+//                System.out.println(ivspec);
+//                System.out.println(key);
+//                System.out.println(image);
+//                //return {ivspec,key,image_content}
+//            }
+//        } catch (SQLException ex) {//phat validation
+//            System.out.println("SQLException: " + ex.getMessage());
+//        } catch (ClassNotFoundException e) {
+//            System.out.println("ClassNotFoundException: " + e.getMessage());
+//        } finally {//closes resources in the end no matter what
+//            try {
+//                if (rs != null) rs.close();
+//                if (stmt != null) stmt.close();
+//                if (connection != null) connection.close();
+//            } catch (SQLException ex) {
+//                System.out.println("SQLException on closing: " + ex.getMessage());
+//            }
+//        }
+//    }
+
+
+
 
 
 
@@ -206,8 +251,8 @@ public class Main {
 
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         System.out.println("Thank you for choosing Stealth Key");
-        queryDb();
-        makeHiddenFile();
+        storeImageAtId(encodeImage("C:\\Users\\fastc\\OneDrive\\Desktop\\mathew.png","message goes here"),2);
+        System.out.println(decodeImage(retrieveImageById(2)));
         System.out.println("The program has finished!!!");
     }
 
