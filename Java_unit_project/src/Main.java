@@ -18,6 +18,10 @@ import java.sql.*;
 import java.util.Base64;
 
 public class Main {
+    private static final String URL = "jdbc:postgresql://localhost:5432/thesafe";
+    private static final String USER = "aj";
+    private static final String PASSWORD = "aj1274414";
+
     //encryption
     public static String[] Encrypt(String password) throws InvalidKeySpecException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         char[] newpassword = password.toCharArray();
@@ -171,11 +175,8 @@ public class Main {
     }
     //vvvvv_these image getter helper functions are only for the master password_vvvvv
     public static void storeImageAtId(byte[] imageBytes, int id) {
-        String url = "jdbc:postgresql://localhost:5432/thesafe";
-        String user = "aj";
-        String password = "aj1274414";
         String sql = "UPDATE person SET master_image = ? WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setBytes(1, imageBytes);
             pstmt.setInt(2, id);
@@ -187,7 +188,7 @@ public class Main {
     }
     public static byte[] retrieveImageById(int id) {
         String sql = "SELECT master_image FROM person WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             ResultSet rs = pstmt.executeQuery();
@@ -198,6 +199,28 @@ public class Main {
             System.out.println(e.getMessage());
         }
         return null;
+    }
+    public static void createPerson(String username, String masterIvspec, String masterKey, byte[] masterImage) {
+        //SQL INSERT statement
+        String sql = "INSERT INTO person (username, master_ivspec, master_key, master_image) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // Set parameters for the prepared statement
+            pstmt.setString(1, username);
+            pstmt.setString(2, masterIvspec);
+            pstmt.setString(3, masterKey);
+            pstmt.setBytes(4, masterImage);
+
+            // Execute the insert operation
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("A new person was inserted successfully.");
+            } else {
+                System.out.println("A new person could not be inserted.");
+            }
+        } catch (SQLException e) {
+            System.err.println("SQL exception occurred: " + e.getMessage());
+        }
     }
 
     //sql and storage
@@ -251,8 +274,9 @@ public class Main {
 
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         System.out.println("Thank you for choosing Stealth Key");
-        storeImageAtId(encodeImage("C:\\Users\\fastc\\OneDrive\\Desktop\\mathew.png","message goes here"),2);
-        System.out.println(decodeImage(retrieveImageById(2)));
+        //storeImageAtId(encodeImage("C:\\Users\\fastc\\OneDrive\\Desktop\\mathew.png","message goes here"),2);
+        //System.out.println(decodeImage(retrieveImageById(2)));
+        createPerson("AJRocks","This is the first test of ivspec in the db","This is the first test of encryption keys in the db",encodeImage("C:\\Users\\fastc\\OneDrive\\Desktop\\mathew.png","message goes here"));
         System.out.println("The program has finished!!!");
     }
 
