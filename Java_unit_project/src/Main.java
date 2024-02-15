@@ -29,7 +29,42 @@ import java.util.Scanner;
 
 
 public class Main {
+    public static Integer testConnect() {
+        try {
+            //explicitly load the PostgreSQL JDBC driver class
+            Class.forName("org.postgresql.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
+            //its a good practice to close the connection
+            connection.close();
+            System.out.println("Connection successful");
+        } catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+        } catch (ClassNotFoundException e) {
+            System.out.println("ClassNotFoundException: " + e.getMessage());
+        }
+        return 8;
+    }
     //encryption
+    public static SecretKey deriveKeyFromPassword(char[] password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        int iterationCount = 65536;
+        int keyLength = 256;
+        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHMACSHA256");
+        /* Creates secret key factory instance for key derivation function PBKDF2 using HmacSHA256 as the underlying has function. */
+        PBEKeySpec spec = new PBEKeySpec(password, salt, iterationCount, keyLength);
+        //Creates specification for the PBKDF2 key derivation function including all the params
+        return skf.generateSecret(spec);
+        //Generate secret key from spec and return
+    }
+
+    public static Cipher initiateCipher(SecretKeySpec secretKeySpec, IvParameterSpec iv, int mode) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        //Initializes a cipher instance for AES encryption in CBC mode(Cipher Block Chaining) with PKCS5 Padding
+        // Note Cipher Block Chaining users the IV for the first block and each subsequent block is stored with the previous ciphertext block/*
+        cipher.init(mode, secretKeySpec, iv);
+        return cipher;
+
+    }
+
     public static String[] Encrypt(String password) throws InvalidKeySpecException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         char[] passwordChars = password.toCharArray();
         //Converts password into a char array as it's more secure
@@ -53,24 +88,6 @@ public class Main {
         };
     }
 
-    public static SecretKey deriveKeyFromPassword(char[] password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        int iterationCount = 65536;
-        int keyLength = 256;
-        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHMACSHA256");
-        /* Creates secret key factory instance for key derivation function PBKDF2 using HmacSHA256 as the underlying has function. */
-        PBEKeySpec spec = new PBEKeySpec(password, salt, iterationCount, keyLength);
-        //Creates specification for the PBKDF2 key derivation function including all the params
-        return skf.generateSecret(spec);
-        //Generate secret key from spec and return
-    }
-    public static Cipher initiateCipher(SecretKeySpec secretKeySpec, IvParameterSpec iv, int mode) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        //Initializes a cipher instance for AES encryption in CBC mode(Cipher Block Chaining) with PKCS5 Padding
-        // Note Cipher Block Chaining users the IV for the first block and each subsequent block is stored with the previous ciphertext block/*
-        cipher.init(mode, secretKeySpec, iv);
-        return cipher;
-
-    }
     public static String decrypt(String ivSpecString, String encryptData, String encodedKey) throws IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
         byte[] ivBytes = Base64.getDecoder().decode(ivSpecString);
         //Decodes the ivSpec from the database
@@ -84,7 +101,8 @@ public class Main {
         return new String(original);
         //Decodes the encryptedData into a base64 string and returns it
     }
-    //secret file for local storage
+
+    //secret file for local storage below
     public static void makeHiddenFile (){
         try {
             String desktopPath = System.getProperty("user.home") + File.separator + "OneDrive" + File.separator + "Desktop" + File.separator;
@@ -98,7 +116,7 @@ public class Main {
             System.out.println(e);
         }
     }
-    //stenography
+    //stenography below
     public static String decodeImage(String imagePath) {
         try {
             //get image and put on buffers
@@ -130,6 +148,7 @@ public class Main {
             return null;
         }
     }
+
     public static void encodeAndSaveImage(String originalImagePath, String message, String outputImagePath) {
         try {
             //get image and put on buffers
@@ -165,59 +184,19 @@ public class Main {
         }
     }
     //sql and storage
-    public static Integer testConnect() {
-        try {
-            //explicitly load the PostgreSQL JDBC driver class
-            Class.forName("org.postgresql.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/thesafe", "aj", "aj1274414");
-            //its a good practice to close the connection
-            connection.close();
-            System.out.println("Connection successful");
-        } catch (SQLException ex) {
-            System.out.println("SQLException: " + ex.getMessage());
-        } catch (ClassNotFoundException e) {
-            System.out.println("ClassNotFoundException: " + e.getMessage());
-        }
-        return 8;
-    }
-
-
-
-
-
-
-    public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
-        System.out.println("Welcome to Stealth Key");
-        testConnect();
-        System.out.println("login or register?");
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            String logOrReg = scanner.nextLine();
-            if (Objects.equals(logOrReg, "login")){
-                login();
-                break;
-            } else if (Objects.equals(logOrReg, "register")) {
-                register();
-                break;
-            }
-            else{
-                System.out.println("Please enter login or register");
-            }
-        }
-
-
-
-        String[] data = Encrypt("aj");
-        decrypt(data[0], data[1], data[2]);
-
-        //encodeAndSaveImage("C:/Users/fastc/OneDrive/Desktop/test_folder/mathew.png", "This is a secret message", "C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png");
-        //System.out.println("The program has finished!!!");
-    }
 
     public static Boolean checkpassword(String password, String username) throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
-        String ivSpec = "";
-        String encryptedData = "";
-        String encodedKey = "";
+        try{
+            //Note the variables below must be correct and if a value cannot be returned ensure to return false before attempting the decrypt function
+            String ivSpec = "";
+            String encryptedData = "";
+            //Note the encrypted Data is stored inside the image
+            String encodedKey = "";
+        } catch (SQLException){
+
+        }
+
+
         //Pull all variables above from database filtered using username that is passed through
         return Objects.equals(password, decrypt(ivSpec, encryptedData, encodedKey));
     }
@@ -243,21 +222,99 @@ public class Main {
         };
     }
 
-
     public static void displayPasswords(String[] passwords){
         for (int i = 0; i < passwords.length; i++) {
             System.out.println(i + ". " + passwords[i]);
         }
     }
 
-    public static void login(){
+    public static void addPassword(){
 
     }
 
-    public static void register(){
+
+
+    public static String login() throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        Scanner scanner = new Scanner(System.in);
+        while (true){
+            System.out.println("Enter username: ");
+            String username = scanner.nextLine();
+            System.out.println("Enter password: ");
+            String password = scanner.nextLine();
+            boolean loggedIn = checkpassword(password, username);
+            if (loggedIn){
+                return username;
+            }
+        }
 
 
     }
+
+    public static Object register() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Please enter username: ");
+        String username = scanner.nextLine();
+
+        System.out.println("Please enter password: ");
+        String password = scanner.nextLine();
+        String[] data = Encrypt(password);
+
+        System.out.println("Please enter an image path: ");
+        String imagePath = scanner.nextLine();
+
+        encodeAndSaveImage(imagePath, data[1], "imagePath");
+        //data[1] has the encrypted data
+
+    }
+
+    public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        System.out.println("Welcome to Stealth Key");
+        testConnect();
+        System.out.println("login or register?");
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            String logOrReg = scanner.nextLine();
+            if (Objects.equals(logOrReg, "login")){
+                String username = login();
+                System.out.println("Please enter correct username and password");
+            } else if (Objects.equals(logOrReg, "register")) {
+                register();
+                break;
+            }
+            else{
+                System.out.println("Please enter login or register");
+            }
+        }
+
+        boolean a = true;
+        while (a) {
+            System.out.println("[all], [add], [update]");
+            String option = scanner.nextLine();
+            a = switch (option) {
+                case "all" ->
+                    //displayPasswords();
+                        true;
+                case "add" ->
+                    //addPassword();
+                        true;
+                case "update" ->
+                    //updatePassword();
+                        true;
+                case "quit" ->
+                    false;
+                default -> true;
+            };
+        }
+
+
+        String[] data = Encrypt("aj");
+        decrypt(data[0], data[1], data[2]);
+
+        //encodeAndSaveImage("C:/Users/fastc/OneDrive/Desktop/test_folder/mathew.png", "This is a secret message", "C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png");
+        //System.out.println("The program has finished!!!");
+    }
+
 
 }
 

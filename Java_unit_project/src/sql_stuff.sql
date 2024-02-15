@@ -1,7 +1,7 @@
 
 CREATE TABLE person(
                        id            BIGSERIAL NOT NULL PRIMARY KEY,
-                       username      VARCHAR(50) NOT NULL ,
+                       username      VARCHAR(50) NOT NULL UNIQUE,
                        master_ivspec VARCHAR(100) NOT NULL ,
                        master_key    VARCHAR(100) NOT NULL ,
                        master_image  BYTEA
