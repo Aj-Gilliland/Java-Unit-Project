@@ -206,14 +206,18 @@ public class Main {
                     messageBits[messageBitIndex] = (c >> i) & 1;
                 }
             }
-            //encode message into the image
+            //tracks current index of the messageBits array
             int imgIndex = 0;
+            //loops through the y (rows) of px's
             for (int y = 0; y < img.getHeight(); y++) {
+                //loops through the x (columns) of px's
                 for (int x = 0; x < img.getWidth(); x++) {
+                    //makes sure the correct bits are being selected
                     if (imgIndex < messageBits.length) {
+                        //gets that pixels color and isolates the blue section
                         int color = img.getRGB(x, y);
                         int blue = color & 0xff;
-                        //modify the LSB of the blue component
+                        //modify the LSB (least signifigant bit) of the blue component
                         blue = (blue & 0xfe) | messageBits[imgIndex++];
                         int newColor = (color & 0xffff00ff) | (blue << 0);
                         img.setRGB(x, y, newColor);
@@ -240,7 +244,6 @@ public class Main {
             System.out.println(e.getMessage());
         }
     }
-
     public static byte[] retrieveImageById(int id) {
         String sql = "SELECT master_image FROM person WHERE id = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
@@ -255,7 +258,7 @@ public class Main {
         }
         return null;
     }
-    //vvvvv_creates thing else_vvvvv
+    //creates the sql entrys vvvv
     public static void createPerson(String username, String masterIvspec, String masterKey, byte[] masterImage) {
         //SQL INSERT statement
         String sql = "INSERT INTO person (username, master_ivspec, master_key, master_image) VALUES (?, ?, ?, ?)";
@@ -298,11 +301,7 @@ public class Main {
         }
     }
 
-<<<<<<< HEAD
-        //sql and storage
-=======
     //sql and storage
-
     public static Boolean checkpassword(String password, String username) throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
         try{
             //Note the variables below must be correct and if a value cannot be returned ensure to return false before attempting the decrypt function
@@ -364,8 +363,6 @@ public class Main {
         }
     }
 
-
->>>>>>> 2e86eb0beaf3a70aabed494742611c119e8272b6
 //    public static String[] queryPasswordByUsername(usernameInput) {
 //        Connection connection = null;
 //        Statement stmt = null;
