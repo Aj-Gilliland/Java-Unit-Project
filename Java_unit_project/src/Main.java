@@ -79,7 +79,7 @@ public class Main {
         System.out.println("Decryption Succesful your password is " + originalString);
         //Decodes the encryptedData into a base64 string
     }
-    //secret file for local storage
+    //secret file for local storage //for the time being consider this nixed
     public static void makeHiddenFile (){
         try {
             String desktopPath = System.getProperty("user.home") + File.separator + "OneDrive" + File.separator + "Desktop" + File.separator;
@@ -97,10 +97,9 @@ public class Main {
     public static byte[] encodeImage(String originalImagePath, String message) {
         try {
             BufferedImage img = ImageIO.read(new File(originalImagePath));
-            int messageLength = message.length();
             int imageWidth = img.getWidth();
             int imageHeight = img.getHeight();
-            int[] messageBits = new int[messageLength * 8 + 8]; //additional 8 bits for the terminating character
+            int[] messageBits = new int[message.length() * 8 + 8];
             //convert message to binary
             int messageBitIndex = 0;
             for (char c : message.toCharArray()) {
@@ -108,23 +107,23 @@ public class Main {
                     messageBits[messageBitIndex] = (c >> i) & 1;
                 }
             }
-            //add a terminating character to the message (null character, ASCII 0)
+            //add a terminating character to the message (this is how ill identify the end of the message)
             for (int i = 7; i >= 0; --i, ++messageBitIndex) {
-                messageBits[messageBitIndex] = 0; //appending 0 to signify the end of the message
+                messageBits[messageBitIndex] = 0;
             }
             if (messageBitIndex > imageWidth * imageHeight) {
-                System.err.println("Error: Image is too small to encode the message.");
+                System.err.println("You cant fit that message into that picture!!!");
                 return null;
             }
             //encode message into the image
             int bitIndex = 0;
-            for (int y = 0; y < imageHeight && bitIndex < messageBitIndex; y++) {
+            for (int i = 0; i < imageHeight && bitIndex < messageBitIndex; i++) {
                 for (int x = 0; x < imageWidth && bitIndex < messageBitIndex; x++) {
-                    int color = img.getRGB(x, y);
+                    int color = img.getRGB(x, i);
                     int blue = color & 0xff;
-                    int newBlue = (blue & 0xfe) | messageBits[bitIndex]; // Modify LSB of blue channel
+                    int newBlue = (blue & 0xfe) | messageBits[bitIndex]; //change LSB of blue channel
                     int newColor = (color & 0xffff00ff) | (newBlue << 0);
-                    img.setRGB(x, y, newColor);
+                    img.setRGB(x, i, newColor);
                     bitIndex++;
                 }
             }
@@ -200,18 +199,17 @@ public class Main {
         }
         return null;
     }
+    //vvvvv_creates thing else_vvvvv
     public static void createPerson(String username, String masterIvspec, String masterKey, byte[] masterImage) {
         //SQL INSERT statement
         String sql = "INSERT INTO person (username, master_ivspec, master_key, master_image) VALUES (?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            // Set parameters for the prepared statement
+            //set parameters for the prepared statement
             pstmt.setString(1, username);
             pstmt.setString(2, masterIvspec);
             pstmt.setString(3, masterKey);
             pstmt.setBytes(4, masterImage);
-
-            // Execute the insert operation
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
                 System.out.println("A new person was inserted successfully.");
@@ -222,8 +220,29 @@ public class Main {
             System.err.println("SQL exception occurred: " + e.getMessage());
         }
     }
+    public static void createPassword(String title, String ivspec, String key, byte[] image, int person_id) {
+        //SQL INSERT statement
+        String sql = "INSERT INTO password (title, ivspec, key, image, person_id) VALUES (?, ?, ?, ?,?)";
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            //set parameters for the prepared statement
+            pstmt.setString(1, title);
+            pstmt.setString(2, ivspec);
+            pstmt.setString(3, key);
+            pstmt.setBytes(4, image);
+            pstmt.setInt(5,person_id);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("A new password was inserted successfully.");
+            } else {
+                System.out.println("A new password could not be inserted.");
+            }
+        } catch (SQLException e) {
+            System.err.println("SQL exception occurred: " + e.getMessage());
+        }
+    }
 
-    //sql and storage
+        //sql and storage
 //    public static String[] queryPasswordByUsername(usernameInput) {
 //        Connection connection = null;
 //        Statement stmt = null;
