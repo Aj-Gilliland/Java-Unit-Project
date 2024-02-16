@@ -18,7 +18,8 @@ import java.sql.*;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Scanner;
-
+import java.util.ArrayList;
+import java.util.List;
 public class Main {
     private static final String URL = "jdbc:postgresql://localhost:5432/thesafe";
     private static final String USER = "aj";
@@ -261,22 +262,23 @@ public class Main {
             System.err.println("SQL exception occurred: " + e.getMessage());
         }
     }
-    public static Password getPasswordsFor(int userId) {//gets user as a new object
-        //SQL INSERT statement
+    public static List<Password> getPasswordsFor(int userId) {//gets all passwords as a new object in a list
+        List<Password> passwords =  new ArrayList<>();
         String sql = "SELECT id, title, ivspec, key, image, person_id FROM password WHERE person_id = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
             ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
+            while (rs.next()) {
                 int id = rs.getInt("id");
                 String title = rs.getString("title");
                 String ivspec = rs.getString("ivspec");
                 String key = rs.getString("key");
                 byte[] image = rs.getBytes("image");
                 int person_id = rs.getInt("person_id");
-                return new Password(id,title,ivspec,key,image,person_id);
+                passwords.add(new Password(id, title, ivspec, key, image, person_id));
             }
+            return passwords;
         } catch (SQLException e) {
             System.err.println("SQL exception occurred: " + e.getMessage());
         }
@@ -346,7 +348,7 @@ public class Main {
 
         System.out.println("Please enter an image path: ");
         String imagePath = scanner.nextLine();
-// aj edited this function to use the correct encodeImage, but if your trying to do it locally just change it back
+
         encodeImage(imagePath, data[1]);
         //data[1] has the encrypted data
     }
@@ -394,8 +396,6 @@ public class Main {
         //encodeAndSaveImage("C:/Users/fastc/OneDrive/Desktop/test_folder/mathew.png", "This is a secret message", "C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png");
         //System.out.println("The program has finished!!!");
     }
-
-
 }
 
 
