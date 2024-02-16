@@ -55,7 +55,7 @@ public class Main {
         }
     }
     //encryption
-    public static SecretKey deriveKeyFromPassword(char[] password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private static SecretKey deriveKeyFromPassword(char[] password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
         int iterationCount = 65536;
         int keyLength = 256;
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHMACSHA256");
@@ -65,14 +65,14 @@ public class Main {
         return skf.generateSecret(spec);
         //Generate secret key from spec and return
     }
-    public static Cipher initiateCipher(SecretKeySpec secretKeySpec, IvParameterSpec iv, int mode) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
+    private static Cipher initiateCipher(SecretKeySpec secretKeySpec, IvParameterSpec iv, int mode) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         //Initializes a cipher instance for AES encryption in CBC mode(Cipher Block Chaining) with PKCS5 Padding
         // Note Cipher Block Chaining users the IV for the first block and each subsequent block is stored with the previous ciphertext block/*
         cipher.init(mode, secretKeySpec, iv);
         return cipher;
     }
-    public static String[] Encrypt(String password) throws InvalidKeySpecException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    private static String[] Encrypt(String password) throws InvalidKeySpecException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         char[] passwordChars = password.toCharArray();
         //Converts password into a char array as it's more secure
         byte[] salt = new byte[16];
@@ -94,7 +94,7 @@ public class Main {
                 Base64.getEncoder().encodeToString(secretKeySpec.getEncoded())
         };
     }
-    public static void decrypt(String ivSpecString, String encryptData, String encodedKey) throws IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
+    private static void decrypt(String ivSpecString, String encryptData, String encodedKey) throws IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
         byte[] ivBytes = Base64.getDecoder().decode(ivSpecString);
         IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
         //Decodes the ivSpec from the database
@@ -123,7 +123,7 @@ public class Main {
 //        }
 //    }
     //stenography below
-    public static byte[] encodeImage(String originalImagePath, String message) {//puts message in image and returns the byte array
+    private static byte[] encodeImage(String originalImagePath, String message) {//puts message in image and returns the byte array
         try {
             BufferedImage img = ImageIO.read(new File(originalImagePath));
             int imageWidth = img.getWidth();
@@ -170,7 +170,7 @@ public class Main {
             return null;
         }
     }
-    public static String decodeImage(byte[] imageData) {//decodes images to be cross checked or declassifyed
+    private static String decodeImage(byte[] imageData) {//decodes images to be cross checked or declassifyed
         try {
             //convert byte array into a BufferedImage
             BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageData));
@@ -201,7 +201,7 @@ public class Main {
             return null;
         }
     }
-    public static void createPerson(String username, String masterIvspec, String masterKey, byte[] masterImage) {//inserts params as a new person in the db
+    private static void createPerson(String username, String masterIvspec, String masterKey, byte[] masterImage) {//inserts params as a new person in the db
         //SQL INSERT statement
         String sql = "INSERT INTO person (username, master_ivspec, master_key, master_image) VALUES (?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
@@ -221,7 +221,7 @@ public class Main {
             System.err.println("SQL exception occurred: " + e.getMessage());
         }
     }
-    public static Person getPerson(String searchName) {//gets user as a new object
+    private static Person getPerson(String searchName) {//gets user as a new object
         //SQL INSERT statement
         String sql = "SELECT username, master_ivspec, master_key, master_image FROM person WHERE username = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
@@ -241,7 +241,7 @@ public class Main {
         System.out.println("Person not found!!!");
         return null;
     }
-    public static void createPassword(String title, String ivspec, String key, byte[] image, int person_id) {//inserts params as a new password in the db
+    private static void createPassword(String title, String ivspec, String key, byte[] image, int person_id) {//inserts params as a new password in the db
         //SQL INSERT statement
         String sql = "INSERT INTO password (title, ivspec, key, image, person_id) VALUES (?, ?, ?, ?,?)";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
@@ -262,7 +262,7 @@ public class Main {
             System.err.println("SQL exception occurred: " + e.getMessage());
         }
     }
-    public static List<Password> getPasswordsFor(int userId) {//gets all passwords as a new object in a list
+    private static List<Password> getPasswordsFor(int userId) {//gets all passwords as a new object in a list
         List<Password> passwords =  new ArrayList<>();
         String sql = "SELECT id, title, ivspec, key, image, person_id FROM password WHERE person_id = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
@@ -299,7 +299,7 @@ public class Main {
 //        //Pull all variables above from database filtered using username that is passed through
 //        return Objects.equals(password, decrypt(ivSpec, encryptedData, encodedKey));
 //    }
-    public static String[] getPasswords(String username, String action){
+    private static String[] getPasswords(String username, String action){
         if (Objects.equals(action, "All")){
             //Proceed to return all passwords for that user
             //user_password = getUserpassword
@@ -315,7 +315,7 @@ public class Main {
         //down here we will return a list of passwords
         return new String[]{};
     }
-    public static void displayPasswords(String[] passwords){
+    private static void displayPasswords(String[] passwords){
         for (int i = 0; i < passwords.length; i++) {
             System.out.println(i + ". " + passwords[i]);
         }
@@ -336,7 +336,7 @@ public class Main {
 
 
 //i changed this vvv to void so i could test my functions, was object
-    public static void register() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    private static void register() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Please enter username: ");
