@@ -315,11 +315,11 @@ public class Main {
         //down here we will return a list of passwords
         return new String[]{};
     }
-    private static void displayPasswords(String[] passwords){
-        for (int i = 0; i < passwords.length; i++) {
-            System.out.println(i + ". " + passwords[i]);
-        }
-    }
+//    private static void displayPasswords(String[] passwords){
+//        for (int i = 0; i < passwords.length; i++) {
+//            System.out.println(i + ". " + passwords[i]);
+//        }
+//    }
 //    public static String login() throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
 //        Scanner scanner = new Scanner(System.in);
 //        while (true) {
@@ -336,22 +336,22 @@ public class Main {
 
 
 //i changed this vvv to void so i could test my functions, was object
-    private static void register() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
-        Scanner scanner = new Scanner(System.in);
-
-        System.out.println("Please enter username: ");
-        String username = scanner.nextLine();
-
-        System.out.println("Please enter password: ");
-        String password = scanner.nextLine();
-        String[] data = Encrypt(password);
-
-        System.out.println("Please enter an image path: ");
-        String imagePath = scanner.nextLine();
-
-        encodeImage(imagePath, data[1]);
-        //data[1] has the encrypted data
-    }
+//    private static void register() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+//        Scanner scanner = new Scanner(System.in);
+//
+//        System.out.println("Please enter username: ");
+//        String username = scanner.nextLine();
+//
+//        System.out.println("Please enter password: ");
+//        String password = scanner.nextLine();
+//        String[] data = Encrypt(password);
+//
+//        System.out.println("Please enter an image path: ");
+//        String imagePath = scanner.nextLine();
+//
+//        encodeImage(imagePath, data[1]);
+//        //data[1] has the encrypted data
+//    }
 
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         System.out.println("Welcome to Stealth Key");
