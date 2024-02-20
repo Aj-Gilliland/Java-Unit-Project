@@ -281,9 +281,9 @@ public class Main {
                 return new Person(id, username, master_ivspec, master_key, master_image);
             }
         } catch (SQLException e) {
-            System.err.println("SQL exception occurred: " + e.getMessage());
+            System.out.println("Person not found!!!");
         }
-        System.out.println("Person not found!!!");
+
         return null;
     }
     private static void createPassword(String title, String ivspec, String key, byte[] image, int person_id) {//inserts params as a new password in the db
@@ -461,49 +461,52 @@ public class Main {
         while (a) {
             System.out.println("[all], [add], [update], [quit]");
             String option = scanner.nextLine();
-            switch (option) {
-                case "all":
-                    displayPasswords(getPasswordsFor(person.id));
-                case "add":
-                    System.out.println("Please enter title of password: ");
-                    String title = scanner.nextLine();
+            if (Objects.equals(option, "all")) {
+                displayPasswords(getPasswordsFor(person.id));
+            } else if (Objects.equals(option, "add")) {
 
-                    System.out.println("Please enter desired password: ");
-                    String password = scanner.nextLine();
-                    String[] data = Encrypt(password);
-                    while (true){
-                        try{
-                            System.out.println("Please enter the file path of a picture: Note just right click the picture and copy file path");
-                            String path = scanner.nextLine();
-                            byte[] image = encodeImage(path, data[1]);
-                            createPassword(title, data[0], data[2], image, person.id);
-                            break;
-                        } catch (Exception e) {
-                            System.out.println("Invalid file path or picture not compatible");
-                        }
-                    }
+                System.out.println("Please enter title of password: ");
+                String title = scanner.nextLine();
 
-                case "update":
-                    int password_id;
-                    while (true){
-                        System.out.println("Please enter the id of the password: Note* This should be on the side of the password when displaying all");
-                        try{
-                            password_id = scanner.nextInt();
-                            break;
-                        } catch (Exception e) {
-                            System.out.println("Please enter a valid number");
-                        }
+                System.out.println("Please enter desired password: ");
+                String password = scanner.nextLine();
+                String[] data = Encrypt(password);
+                while (true) {
+                    try {
+                        System.out.println("Please enter the file path of a picture: Note just right click the picture and copy file path");
+                        String path = scanner.nextLine();
+                        byte[] image = encodeImage(path, data[1]);
+                        createPassword(title, data[0], data[2], image, person.id);
+                        break;
+                    } catch (Exception e) {
+                        System.out.println("Invalid file path or picture not compatible");
                     }
-                    System.out.println("Please enter a new password: ");
-                    String new_password = scanner.nextLine();
+                }
+            } else if (Objects.equals(option, "update")) {
+
+                int password_id;
+                while (true) {
+                    System.out.println("Please enter the id of the password: Note* This should be on the side of the password when displaying all");
+                    try {
+                        password_id = scanner.nextInt();
+                        break;
+                    } catch (Exception e) {
+                        System.out.println("Please enter a valid number");
+                    }
+                }
+                System.out.println("Please enter a new password or [b]: ");
+                String new_password = scanner.nextLine();
+                if (!Objects.equals(new_password, "b")) {
                     updatePassword(password_id, new_password);
+                }
 
-                case "quit":
-                    a=false;
-
-                default:
+            } else if (Objects.equals(option, "delete")) {
+                continue;
+            } else if (Objects.equals(option, "quit")) {
+                a=false;
+            }else {
                     System.out.println("Incorrect Input");
-            };
+            }
         }
 //private static void createPassword(String title, String ivspec, String key, byte[] image, int person_id)
 
