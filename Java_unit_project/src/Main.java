@@ -493,6 +493,7 @@ public class Main {
                             System.out.println("Please enter a valid number");
                         }
                     }
+                    scanner.nextLine();
                     System.out.println("Please enter a new password: ");
                     String new_password = scanner.nextLine();
                     updatePassword(password_id, new_password);
