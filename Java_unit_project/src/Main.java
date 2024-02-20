@@ -296,9 +296,7 @@ public class Main {
             pstmt.setBytes(4, image);
             pstmt.setInt(5,person_id);
             int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("A new password was inserted successfully.");
-            } else {
+            if (!(affectedRows > 0)) {
                 System.out.println("A new password could NOT be inserted!!!");
             }
         } catch (SQLException e) {
