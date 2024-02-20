@@ -210,7 +210,6 @@ public class Main {
                 return null;
             }
         } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
             return null;
         }
     }
@@ -245,7 +244,7 @@ public class Main {
             return null;
         }
     }
-    private static void createPerson(String username, String masterIvspec, String masterKey, byte[] masterImage) {//inserts params as a new person in the db
+    private static boolean createPerson(String username, String masterIvspec, String masterKey, byte[] masterImage) {//inserts params as a new person in the db
         //SQL INSERT statement
         String sql = "INSERT INTO person (username, master_ivspec, master_key, master_image) VALUES (?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
@@ -257,11 +256,13 @@ public class Main {
             pstmt.setBytes(4, masterImage);
             int affectedRows = pstmt.executeUpdate();
             if (!(affectedRows > 0)) {
-                System.out.println("A new person could NOT be inserted!!!");
+                return false;
             }
+            return true;
         } catch (SQLException e) {
             System.err.println("SQL exception occurred: " + e.getMessage());
         }
+        return false;
     }
     private static Person getPerson(String searchName) {//gets user as a new object
         //SQL INSERT statement
@@ -279,9 +280,9 @@ public class Main {
                 return new Person(id, username, master_ivspec, master_key, master_image);
             }
         } catch (SQLException e) {
-            System.err.println("SQL exception occurred: " + e.getMessage());
+            return null;
         }
-        System.out.println("Person not found!!!");
+
         return null;
     }
     private static void createPassword(String title, String ivspec, String key, byte[] image, int person_id) {//inserts params as a new password in the db
@@ -399,6 +400,7 @@ public class Main {
             if (loggedIn) {
                 return username;
             }
+            return "null";
         }
     }
 
@@ -420,25 +422,32 @@ public class Main {
         byte[] encodedImg = encodeImage(imagePath, data[1]);
         //data[1] has the encrypted data
         try{
-            createPerson(username, data[0], data[2], encodedImg);
-            return true;
+            boolean created = createPerson(username, data[0], data[2], encodedImg);
+            if (created){
+                return true;
+            }
+            return false;
+
         } catch (Exception e) {
-            System.out.println("Error please ensure the above parameters are correct");
+            return false;
         }
-        return false;
+
     }
 
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         System.out.println("Welcome to Stealth Key");
 
-        System.out.println("login or register?");
         Scanner scanner = new Scanner(System.in);
         String username;
         while (true) {
+            System.out.println("login or register?");
             String logOrReg = scanner.nextLine();
             if (Objects.equals(logOrReg, "login")){
                 username = login();
-                break;
+                if (!Objects.equals(username, "null")){
+                    break;
+                }
+                System.out.println("Invalid Credentials");
             } else if (Objects.equals(logOrReg, "register")) {
                 boolean bool = register();
                 if (bool){
@@ -449,7 +458,7 @@ public class Main {
 
             }
             else{
-                System.out.println("Please enter login or register");
+                System.out.println("Please enter [login] or [register]");
             }
         }
         Person person = getPerson(username);
@@ -483,19 +492,27 @@ public class Main {
                     break;
 
                 case "update":
-                    int password_id;
+                    String input;
                     while (true){
-                        System.out.println("Please enter the id of the password: Note* This should be on the side of the password when displaying all");
+                        System.out.println("Please enter the id of the password or [b]: Note* This should be on the side of the password when displaying all");
                         try{
-                            password_id = scanner.nextInt();
-                            break;
+                            input = scanner.nextLine();
+                            if (Objects.equals(input, "b")){
+                                break;
+                            }
+                            try{
+                                int password_id = Integer.parseInt(input);
+                                System.out.println("Please enter a new password: ");
+                                String new_password = scanner.nextLine();
+                                updatePassword(password_id, new_password);
+                                break;
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
                         } catch (Exception e) {
                             System.out.println("Please enter a valid number");
                         }
                     }
-                    System.out.println("Please enter a new password: ");
-                    String new_password = scanner.nextLine();
-                    updatePassword(password_id, new_password);
                     break;
 
                 case "quit":
