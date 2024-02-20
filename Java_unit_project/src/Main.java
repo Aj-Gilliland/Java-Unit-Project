@@ -256,9 +256,7 @@ public class Main {
             pstmt.setString(3, masterKey);
             pstmt.setBytes(4, masterImage);
             int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("A new person was inserted successfully.");
-            } else {
+            if (!(affectedRows > 0)) {
                 System.out.println("A new person could NOT be inserted!!!");
             }
         } catch (SQLException e) {
@@ -384,12 +382,10 @@ public class Main {
 
     private static void displayPasswords(List<Password> passwords){
             if (Objects.equals(passwords, null)){
+                System.out.println("You have no passwords");
                 return;
             }
             passwords.forEach(element -> System.out.println(element.id + ". " + element.title));
-
-
-
     }
 
     public static String login() throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
@@ -411,14 +407,14 @@ public class Main {
     private static boolean register() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Please enter username: ");
+        System.out.println("Please enter your new username: ");
         String username = scanner.nextLine();
 
-        System.out.println("Please enter password: ");
+        System.out.println("Please enter your new master password: ");
         String password = scanner.nextLine();
         String[] data = Encrypt(password);
 
-        System.out.println("Please enter an image path: ");
+        System.out.println("Please enter an image path so we can hide your master password: ");
         String imagePath = scanner.nextLine();
 
         byte[] encodedImg = encodeImage(imagePath, data[1]);
@@ -446,7 +442,7 @@ public class Main {
             } else if (Objects.equals(logOrReg, "register")) {
                 boolean bool = register();
                 if (bool){
-                    System.out.println("Account created please proceed to login;");
+                    System.out.println("Account created please proceed to login");
                 }else {
                     System.out.println("Information entered was invalid please try again.");
                 }
@@ -505,10 +501,6 @@ public class Main {
                     System.out.println("Incorrect Input");
             };
         }
-//private static void createPassword(String title, String ivspec, String key, byte[] image, int person_id)
-
-        //encodeAndSaveImage("C:/Users/fastc/OneDrive/Desktop/test_folder/mathew.png", "This is a secret message", "C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png");
-        //System.out.println("The program has finished!!!");
     }
 }
 
