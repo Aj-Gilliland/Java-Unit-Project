@@ -455,11 +455,13 @@ public class Main {
         Person person = getPerson(username);
         boolean a = true;
         while (a) {
-            System.out.println("[all], [add], [update], [quit]");
+            System.out.println("view [all], [add] password, [update] password, [quit]");
             String option = scanner.nextLine();
             switch (option) {
                 case "all":
                     displayPasswords(getPasswordsFor(person.id));
+                    break;
+
                 case "add":
                     System.out.println("Please enter title of password: ");
                     String title = scanner.nextLine();
@@ -478,6 +480,7 @@ public class Main {
                             System.out.println("Invalid file path or picture not compatible");
                         }
                     }
+                    break;
 
                 case "update":
                     int password_id;
@@ -493,12 +496,14 @@ public class Main {
                     System.out.println("Please enter a new password: ");
                     String new_password = scanner.nextLine();
                     updatePassword(password_id, new_password);
+                    break;
 
                 case "quit":
                     a=false;
 
                 default:
                     System.out.println("Incorrect Input");
+                    break;
             };
         }
     }
