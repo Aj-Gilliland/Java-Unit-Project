@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="lib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/Java_unit_project/lib/postgresql-9.4-1206-jdbc41.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Java_unit_project/lib/postgresql-42.7.1-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Java_unit_project/lib/checker-qual-3.41.0-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Java_unit_project/lib/postgresql-42.7.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Java_unit_project/lib/checker-qual-3.41.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

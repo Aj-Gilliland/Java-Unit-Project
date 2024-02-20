@@ -26,15 +26,35 @@ public class Main {
     private static final String PASSWORD = "aj1274414";
 
     public static class Person{
+        private int id;
         private String username;
         private String masterIvspec;
         private String masterKey;
         private byte[] masterImage;
-        public Person(String username, String masterIvspec, String masterKey, byte[] masterImage){
+        public Person(int id, String username, String masterIvspec, String masterKey, byte[] masterImage){
+            this.id = id;
             this.username = username;
             this.masterIvspec = masterIvspec;
             this.masterKey = masterKey;
             this.masterImage = masterImage;
+        }
+        public int id(){
+            return id;
+        }
+        public String username() {
+            return username;
+        }
+
+        public String masterIvspec() {
+            return masterIvspec;
+        }
+
+        public String masterKey() {
+            return masterKey;
+        }
+
+        public byte[] masterImage() {
+            return masterImage;
         }
     }
     public static class Password {
@@ -52,6 +72,30 @@ public class Main {
             this.key = key;
             this.image = image;
             this.person_id = person_id;
+        }
+
+        public int id() {
+            return id;
+        }
+
+        public String title() {
+            return title;
+        }
+
+        public String ivspec() {
+            return ivspec;
+        }
+
+        public String key() {
+            return key;
+        }
+
+        public byte[] image() {
+            return image;
+        }
+
+        public int person_id() {
+            return person_id;
         }
     }
     //encryption
@@ -94,7 +138,7 @@ public class Main {
                 Base64.getEncoder().encodeToString(secretKeySpec.getEncoded())
         };
     }
-    private static void decrypt(String ivSpecString, String encryptData, String encodedKey) throws IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
+    private static String decrypt(String ivSpecString, String encryptData, String encodedKey) throws IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
         byte[] ivBytes = Base64.getDecoder().decode(ivSpecString);
         IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
         //Decodes the ivSpec from the database
@@ -106,7 +150,7 @@ public class Main {
         //Re-initialize cipher in decrypt mode with ivspec and key used during encryption
         byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptData));
         String originalString = new String(original);
-        System.out.println("Decryption Succesful your password is " + originalString);
+        return originalString;
         //Decodes the encryptedData into a base64 string
     }
 //    public static void makeHiddenFile (){//secret file for local storage //for the time being consider this nixed
@@ -223,17 +267,18 @@ public class Main {
     }
     private static Person getPerson(String searchName) {//gets user as a new object
         //SQL INSERT statement
-        String sql = "SELECT username, master_ivspec, master_key, master_image FROM person WHERE username = ?";
+        String sql = "SELECT id, username, master_ivspec, master_key, master_image FROM person WHERE username = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, searchName);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
+                int id = rs.getInt("id");
                 String username = rs.getString("username");
                 String master_ivspec = rs.getString("master_ivspec");
                 String master_key = rs.getString("master_key");
                 byte[] master_image = rs.getBytes("master_image");
-                return new Person(username,master_ivspec,master_key,master_image);
+                return new Person(id, username, master_ivspec, master_key, master_image);
             }
         } catch (SQLException e) {
             System.err.println("SQL exception occurred: " + e.getMessage());
@@ -262,6 +307,44 @@ public class Main {
             System.err.println("SQL exception occurred: " + e.getMessage());
         }
     }
+
+    private static void updatePassword(int password_id, String password) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        Scanner scanner = new Scanner(System.in);
+        byte[] image;
+        String[] data = Encrypt(password);
+
+        System.out.println("Please enter a new title or the same title: ");
+        String title = scanner.nextLine();
+        while (true){
+            try{
+                System.out.println("Please enter a new image path");
+                String path = scanner.nextLine();
+                image = encodeImage(path, data[1]);
+                break;
+            } catch (Exception e) {
+                System.out.println("Error generating image.");
+            }
+        }
+
+        String sql = "UPDATE password SET title = ?, ivspec = ?, key = ?, image = ? WHERE id = ?";
+        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, title);
+            pstmt.setString(2, data[0]);
+            pstmt.setString(3, data[1]);
+            pstmt.setBytes(4, image);
+            pstmt.setInt(5, password_id);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("A new password was inserted successfully.");
+            } else {
+                System.out.println("A new password could NOT be inserted!!!");
+            }
+        } catch (SQLException e) {
+            System.err.println("SQL exception occurred: " + e.getMessage());
+        }
+
+    }
     private static List<Password> getPasswordsFor(int userId) {//gets all passwords as a new object in a list
         List<Password> passwords =  new ArrayList<>();
         String sql = "SELECT id, title, ivspec, key, image, person_id FROM password WHERE person_id = ?";
@@ -286,112 +369,143 @@ public class Main {
         return null;
     }
     //sql and storage
-//    public static Boolean checkpassword(String password, String username) throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
-//        try{
-//            //Note the variables below must be correct and if a value cannot be returned ensure to return false before attempting the decrypt function
-//            String ivSpec = "";
-//            String encryptedData = "";
-//            //Note the encrypted Data is stored inside the image
-//            String encodedKey = "";
-//        } catch (Exception e){
-//            e.printStackTrace();
-//        }
-//        //Pull all variables above from database filtered using username that is passed through
-//        return Objects.equals(password, decrypt(ivSpec, encryptedData, encodedKey));
-//    }
-    private static String[] getPasswords(String username, String action){
-        if (Objects.equals(action, "All")){
-            //Proceed to return all passwords for that user
-            //user_password = getUserpassword
-            //while (Objects.equals(checkpassword(user_password, username), false))
-            //proceed to make user either quit or enter the correct password
+    public static Boolean checkpassword(String password, String username) throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        try{
+            Person person = getPerson(username);
+            String ivSpec = person.masterIvspec;
+            String encodedKey = person.masterKey;
+            String encryptedData = decodeImage(person.masterImage);
+            return Objects.equals(password, decrypt(ivSpec, encryptedData, encodedKey));
+        } catch (Exception e){
+            return false;
         }
-        try {
-            //Try to return the password by which equals the title of
-        } catch (Exception e) {
-            //Inside the catch I think it would be better to put them inside a while loop to ask what is wanted but it may be best to just return them to the main program
-            throw new RuntimeException(e);
-        }
-        //down here we will return a list of passwords
-        return new String[]{};
+        //Pull all variables above from database filtered using username that is passed through
     }
-//    private static void displayPasswords(String[] passwords){
-//        for (int i = 0; i < passwords.length; i++) {
-//            System.out.println(i + ". " + passwords[i]);
-//        }
-//    }
-//    public static String login() throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
-//        Scanner scanner = new Scanner(System.in);
-//        while (true) {
-//            System.out.println("Enter username: ");
-//            String username = scanner.nextLine();
-//            System.out.println("Enter password: ");
-//            String password = scanner.nextLine();
-//            boolean loggedIn = checkpassword(password, username);
-//            if (loggedIn) {
-//                return username;
-//            }
-//        }
-//    }
+
+    private static void displayPasswords(List<Password> passwords){
+            if (Objects.equals(passwords, null)){
+                return;
+            }
+            passwords.forEach(element -> System.out.println(element.id + ". " + element.title));
+
+
+
+    }
+
+    public static String login() throws InvalidAlgorithmParameterException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.println("Enter username: ");
+            String username = scanner.nextLine();
+            System.out.println("Enter password: ");
+            String password = scanner.nextLine();
+            boolean loggedIn = checkpassword(password, username);
+            if (loggedIn) {
+                return username;
+            }
+        }
+    }
 
 
 //i changed this vvv to void so i could test my functions, was object
-//    private static void register() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
-//        Scanner scanner = new Scanner(System.in);
-//
-//        System.out.println("Please enter username: ");
-//        String username = scanner.nextLine();
-//
-//        System.out.println("Please enter password: ");
-//        String password = scanner.nextLine();
-//        String[] data = Encrypt(password);
-//
-//        System.out.println("Please enter an image path: ");
-//        String imagePath = scanner.nextLine();
-//
-//        encodeImage(imagePath, data[1]);
-//        //data[1] has the encrypted data
-//    }
+    private static boolean register() throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Please enter username: ");
+        String username = scanner.nextLine();
+
+        System.out.println("Please enter password: ");
+        String password = scanner.nextLine();
+        String[] data = Encrypt(password);
+
+        System.out.println("Please enter an image path: ");
+        String imagePath = scanner.nextLine();
+
+        byte[] encodedImg = encodeImage(imagePath, data[1]);
+        //data[1] has the encrypted data
+        try{
+            createPerson(username, data[0], data[2], encodedImg);
+            return true;
+        } catch (Exception e) {
+            System.out.println("Error please ensure the above parameters are correct");
+        }
+        return false;
+    }
 
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         System.out.println("Welcome to Stealth Key");
-        System.out.println(getPasswordsFor(1));
 
-//        System.out.println("login or register?");
-//        Scanner scanner = new Scanner(System.in);
-//        while (true) {
-//            String logOrReg = scanner.nextLine();
-//            if (Objects.equals(logOrReg, "login")){
-//                String username = login();
-//                System.out.println("Please enter correct username and password");
-//            } else if (Objects.equals(logOrReg, "register")) {
-//                register();
-//                break;
-//            }
-//            else{
-//                System.out.println("Please enter login or register");
-//            }
-//        }
-//        boolean a = true;
-//        while (a) {
-//            System.out.println("[all], [add], [update]");
-//            String option = scanner.nextLine();
-//            a = switch (option) {
-//                case "all" ->
-//                    //displayPasswords();
-//                        true;
-//                case "add" ->
-//                    //addPassword();
-//                        true;
-//                case "update" ->
-//                    //updatePassword();
-//                        true;
-//                case "quit" ->
-//                    false;
-//                default -> true;
-//            };
-//        }
+        System.out.println("login or register?");
+        Scanner scanner = new Scanner(System.in);
+        String username;
+        while (true) {
+            String logOrReg = scanner.nextLine();
+            if (Objects.equals(logOrReg, "login")){
+                username = login();
+                break;
+            } else if (Objects.equals(logOrReg, "register")) {
+                boolean bool = register();
+                if (bool){
+                    System.out.println("Account created please proceed to login;");
+                }else {
+                    System.out.println("Information entered was invalid please try again.");
+                }
 
+            }
+            else{
+                System.out.println("Please enter login or register");
+            }
+        }
+        Person person = getPerson(username);
+        boolean a = true;
+        while (a) {
+            System.out.println("[all], [add], [update], [quit]");
+            String option = scanner.nextLine();
+            switch (option) {
+                case "all":
+                    displayPasswords(getPasswordsFor(person.id));
+                case "add":
+                    System.out.println("Please enter title of password: ");
+                    String title = scanner.nextLine();
+
+                    System.out.println("Please enter desired password: ");
+                    String password = scanner.nextLine();
+                    String[] data = Encrypt(password);
+                    while (true){
+                        try{
+                            System.out.println("Please enter the file path of a picture: Note just right click the picture and copy file path");
+                            String path = scanner.nextLine();
+                            byte[] image = encodeImage(path, data[1]);
+                            createPassword(title, data[0], data[2], image, person.id);
+                            break;
+                        } catch (Exception e) {
+                            System.out.println("Invalid file path or picture not compatible");
+                        }
+                    }
+
+                case "update":
+                    int password_id;
+                    while (true){
+                        System.out.println("Please enter the id of the password: Note* This should be on the side of the password when displaying all");
+                        try{
+                            password_id = scanner.nextInt();
+                            break;
+                        } catch (Exception e) {
+                            System.out.println("Please enter a valid number");
+                        }
+                    }
+                    System.out.println("Please enter a new password: ");
+                    String new_password = scanner.nextLine();
+                    updatePassword(password_id, new_password);
+
+                case "quit":
+                    a=false;
+
+                default:
+                    System.out.println("Incorrect Input");
+            };
+        }
+//private static void createPassword(String title, String ivspec, String key, byte[] image, int person_id)
 
         //encodeAndSaveImage("C:/Users/fastc/OneDrive/Desktop/test_folder/mathew.png", "This is a secret message", "C:/Users/fastc/OneDrive/Desktop/test_folder/encoded_mathew.png");
         //System.out.println("The program has finished!!!");
